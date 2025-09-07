@@ -1,0 +1,1 @@
+from .auths import BasicLoginInfo
