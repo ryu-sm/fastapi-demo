@@ -9,13 +9,13 @@ from configs import pg_settings
 
 
 class PgConnSession:
-    def __init__(self, *, conn: AsyncConnection, tx: AsyncTransaction):
-        self._conn = conn
-        self._tx = tx
+    def __init__(self, *, conn: AsyncConnection, tx_cm: AsyncTransaction):
+        self.__conn = conn
+        self.__tx_cm = tx_cm
 
     async def fetch_all(self, sql: str) -> List[Dict[str, Any]]:
 
-        async with self._conn.cursor() as cur:
+        async with self.__conn.cursor() as cur:
             try:
                 await cur.execute(sql)
                 return await cur.fetchall()
@@ -25,7 +25,7 @@ class PgConnSession:
 
     async def fetch_one(self, sql: str) -> Optional[Dict[str, Any]]:
 
-        async with self._conn.cursor() as cur:
+        async with self.__conn.cursor() as cur:
             try:
                 await cur.execute(sql)
                 return await cur.fetchone()
@@ -35,7 +35,7 @@ class PgConnSession:
 
     async def fetch_val(self, sql: str) -> Any:
 
-        async with self._conn.cursor() as cur:
+        async with self.__conn.cursor() as cur:
             try:
                 await cur.execute(sql)
                 row = await cur.fetchone()
@@ -44,9 +44,9 @@ class PgConnSession:
                 # TODO: sql debug
                 raise
 
-    async def execute(self, sql: str) -> Any:
+    async def execute(self, sql: str) -> str:
 
-        async with self._conn.cursor() as cur:
+        async with self.__conn.cursor() as cur:
             try:
                 await cur.execute(sql)
                 return cur.statusmessage
@@ -54,9 +54,9 @@ class PgConnSession:
                 # TODO: sql debug
                 raise
 
-    async def executemany(self, sql: str) -> Any:
+    async def executemany(self, sql: str) -> str:
 
-        async with self._conn.cursor() as cur:
+        async with self.__conn.cursor() as cur:
             try:
                 await cur.executemany(sql)
                 return cur.statusmessage
@@ -65,7 +65,7 @@ class PgConnSession:
                 raise
 
     async def rollback(self, exc):
-        await self._tx.__aexit__(type(exc), exc, exc.__traceback__)
+        await self.__tx_cm.__aexit__(type(exc), exc, exc.__traceback__)
 
 
 class PgPoolManager:
@@ -120,7 +120,7 @@ class PgPoolManager:
         await tx_cm.__aenter__()
 
         try:
-            yield PgConnSession(conn, tx_cm)
+            yield PgConnSession(conn=conn, tx_cm=tx_cm)
         except Exception as exc:
             await tx_cm.__aexit__(type(exc), exc, exc.__traceback__)
             raise
