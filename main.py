@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.core import pg_pool_manager
 from configs import basic_settings
 from app.routers import router_auths
+from app.routers import router_users
 
 
 @asynccontextmanager
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(docs_url=None, redoc_url=None, root_path=f"/api/v{basic_settings.VERSION}", lifespan=lifespan)
 
 app.include_router(router_auths)
+app.include_router(router_users)
 
 
 if __name__ == "__main__":
